@@ -36,6 +36,7 @@ var client swarm.Client
 var logflag bool
 var rateLimit int64
 var nodes []swarm.SwarmNode
+var nameToNodeMap map[string]*swarm.SwarmNode
 var mutex = &sync.Mutex{}
 var swarmDomains arrayFlags
 var returnWorkers bool
@@ -172,9 +173,26 @@ func refreshNodes() {
 
 	mutex.Lock()
 	nodes, err = client.ListActiveNodes()
+	mapNodesToNames(nodes)
 	logger.Printf("Refreshed nodes: %v\n", nodes)
 	mutex.Unlock()
 	if err != nil {
 		panic(err)
+	}
+}
+
+func mapNodesToNames(nodes []swarm.SwarmNode) {
+	var newMap = make(map[string]*swarm.SwarmNode)
+
+	for _, node := range nodes {
+		if len(node.DnsNames) <= 0 {
+			continue
+		}
+
+		for _, name := range node.DnsNames {
+			newMap[name] = &node
+
+			logger.Printf("Mapped: %v to %v\n", name, node.Hostname)
+		}
 	}
 }
