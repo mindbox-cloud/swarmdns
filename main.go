@@ -161,8 +161,9 @@ func answerForNodes(domain string) []dns.RR {
 
 	if swarmDomain != normDomain {
 		var subDomain = replaceLast(normDomain, "."+swarmDomain, "")
-		nodes = nameToNodeMap[subDomain]
-		logger.Printf("%v, %v", swarmDomain, normDomain)
+		if len(nameToNodeMap[subDomain]) > 0 {
+			nodes = nameToNodeMap[subDomain]
+		}
 	}
 
 	for _, node := range nodes {
@@ -211,7 +212,7 @@ func mapNodesToNames(nodes []swarm.SwarmNode) {
 		for _, name := range node.DnsNames {
 			newMap[name] = append(newMap[name], node)
 
-			logger.Printf("Mapped: [%v] to [%v]\n", name, node.Hostname)
+			logger.Printf("Mapped: [%v] to [%v]\n", node.Hostname, name)
 		}
 	}
 
