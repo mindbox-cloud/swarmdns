@@ -13,6 +13,7 @@ type SwarmNode struct {
 	Ip        string
 	Hostname  string
 	IsManager bool
+	DnsNames  []string
 }
 
 type Client interface {
@@ -54,7 +55,13 @@ func (client swarmClient) ListActiveNodes() ([]SwarmNode, error) {
 				ip = node.Status.Addr
 			}
 
-			nodes = append(nodes, SwarmNode{Ip: ip, Hostname: getHostname(node), IsManager: node.ManagerStatus != nil})
+			nodes = append(nodes,
+				SwarmNode{
+					Ip:        ip,
+					Hostname:  getHostname(node),
+					IsManager: node.ManagerStatus != nil,
+					DnsNames:  getDnsNames(node),
+				})
 		}
 	}
 
@@ -72,4 +79,21 @@ func getHostname(node swarm.Node) string {
 func getIPFromAddr(addr string) string {
 	ipAndPort := strings.Split(addr, ":")
 	return ipAndPort[0]
+}
+
+func getDnsNames(node swarm.Node) []string {
+	var namesStr = node.Spec.Annotations.Labels["swarmdns-names"]
+
+	if len(namesStr) <= 0 {
+		return []string{}
+	}
+
+	var names = strings.Split(namesStr, ",")
+
+	// Just to trim whitespaces
+	for i, name := range names {
+		names[i] = strings.Trim(name, " ")
+	}
+
+	return names
 }
