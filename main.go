@@ -167,7 +167,7 @@ func answerForNodes(domain string) []dns.RR {
 	}
 
 	for _, node := range nodes {
-		if node.IsManager || returnWorkers {
+		if (node.IsManager || returnWorkers) && !node.Ignore {
 			rr := new(dns.A)
 			rr.Hdr = dns.RR_Header{Name: domain, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: uint32(TTL)}
 			rr.A = net.ParseIP(node.Ip)

@@ -13,6 +13,7 @@ type SwarmNode struct {
 	Ip        string
 	Hostname  string
 	IsManager bool
+	Ignore    bool
 	DnsNames  []string
 }
 
@@ -55,11 +56,14 @@ func (client swarmClient) ListActiveNodes() ([]SwarmNode, error) {
 				ip = node.Status.Addr
 			}
 
+			_, ignore := node.Spec.Annotations.Labels["swarmdns-ignore"]
+
 			nodes = append(nodes,
 				SwarmNode{
 					Ip:        ip,
 					Hostname:  getHostname(node),
 					IsManager: node.ManagerStatus != nil,
+					Ignore:    ignore,
 					DnsNames:  getDnsNames(node),
 				})
 		}
