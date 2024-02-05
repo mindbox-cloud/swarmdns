@@ -36,7 +36,7 @@ var client swarm.Client
 var logflag bool
 var rateLimit int64
 var nodes []swarm.SwarmNode
-var nameToNodeMap map[string]*swarm.SwarmNode
+var nameToNodeMap map[string][]swarm.SwarmNode
 var mutex = &sync.Mutex{}
 var swarmDomains arrayFlags
 var returnWorkers bool
@@ -143,9 +143,27 @@ func handleRequest(w dns.ResponseWriter, r *dns.Msg) {
 	w.WriteMsg(m)
 }
 
+func replaceLast(s, search, replace string) string {
+	i := strings.LastIndex(s, search)
+	if i == -1 {
+		return s
+	}
+	return s[:i] + replace + s[i+len(search):]
+}
+
 func answerForNodes(domain string) []dns.RR {
 	mutex.Lock()
 	var rrs []dns.RR
+	var nodes = nodes
+
+	var swarmDomain = *matchingDomain(domain)
+	var normDomain = strings.ToLower(domain)
+
+	if swarmDomain != normDomain {
+		var subDomain = replaceLast(normDomain, "."+swarmDomain, "")
+		nodes = nameToNodeMap[subDomain]
+	}
+
 	for _, node := range nodes {
 		if node.IsManager || returnWorkers {
 			rr := new(dns.A)
@@ -182,7 +200,7 @@ func refreshNodes() {
 }
 
 func mapNodesToNames(nodes []swarm.SwarmNode) {
-	var newMap = make(map[string]*swarm.SwarmNode)
+	var newMap = make(map[string][]swarm.SwarmNode)
 
 	for _, node := range nodes {
 		if len(node.DnsNames) <= 0 {
@@ -190,9 +208,11 @@ func mapNodesToNames(nodes []swarm.SwarmNode) {
 		}
 
 		for _, name := range node.DnsNames {
-			newMap[name] = &node
+			newMap[name] = append(newMap[name], node)
 
-			logger.Printf("Mapped: %v to %v\n", name, node.Hostname)
+			logger.Printf("Mapped: [%v] to [%v]\n", name, node.Hostname)
 		}
 	}
+
+	nameToNodeMap = newMap
 }
