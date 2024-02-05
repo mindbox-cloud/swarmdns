@@ -156,8 +156,8 @@ func answerForNodes(domain string) []dns.RR {
 	var rrs []dns.RR
 	var nodes = nodes
 
-	var swarmDomain = *matchingDomain(domain)
-	var normDomain = strings.ToLower(domain) + "."
+	var swarmDomain = *matchingDomain(domain) + "."
+	var normDomain = strings.ToLower(domain)
 
 	if swarmDomain != normDomain {
 		var subDomain = replaceLast(normDomain, "."+swarmDomain, "")
